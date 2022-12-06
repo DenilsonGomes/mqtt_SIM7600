@@ -1,0 +1,5 @@
+mqtt_SIM7600 	KEYWORD1
+iniciaMQTT 	KEYWORD2
+inscreve 	KEYWORD2
+publica 	KEYWORD2
+encerraMQTT 	KEYWORD2
