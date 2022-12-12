@@ -19,7 +19,7 @@ mqtt_SIM7600::mqtt_SIM7600(int num)
 }
 
 void mqtt_SIM7600::retornoAT(){
-  Serial.println("Lendo retorno do comnado.");
+  Serial.println("Lendo retorno do comando.");
   //Receiving MODEM Response
   while(mySerial.available()>0)
   {
@@ -48,7 +48,7 @@ void mqtt_SIM7600::retornoAT(){
       Serial.println(new5);
       new5.remove(new5.length()-1);
       Serial.println(new5);
-    }      
+    }     
   }
 } 
 
@@ -58,14 +58,13 @@ void mqtt_SIM7600::iniciaMQTT(String host, String token)
   delay(2000);
   mySerial.println("AT+CMQTTSTART"); // Inicia conexão MQTT
   delay(2000); 
-  mySerial.println("AT+CMQTTACCQ=0,\"Client c\""); // Client ID
+  mySerial.println("AT+CMQTTACCQ=0,\"Client d\""); // Client ID
   delay(2000);
   String msg;
   msg = "AT+CMQTTCONNECT=0,\"" + host + "\",90,1,\"" + token + "\"";
   Serial.println(msg);
   mySerial.println(msg); // Conecta ao Servidor MQTT
   //"AT+CMQTTCONNECT=0,\"tcp://demo.thingsboard.io:1883\",90,1,\"uz8xZMgFQkltIc7VpL4A\""
-  Serial.println("Iniciou MQTT");
   delay(3000);
 }
  
@@ -84,9 +83,13 @@ void mqtt_SIM7600::inscreve(String topico)
 void mqtt_SIM7600::publica(String topico, String payload)
 {
   mySerial.println("AT+CMQTTTOPIC=0," + String(topico.length())); // Tamanho do nome do topico
+  Serial.println("AT+CMQTTTOPIC=0," + String(topico.length()));
   delay(2000);
+  
   mySerial.println(topico); // Topico
+  Serial.println(topico);
   delay(2000);
+  
   aux2 = "AT+CMQTTPAYLOAD=0," + String(payload.length());
   mySerial.println(aux2); // Define tamanho da payload
   delay(2000);
@@ -94,8 +97,8 @@ void mqtt_SIM7600::publica(String topico, String payload)
   delay(2000);
   mySerial.println("AT+CMQTTPUB=0,1,60"); // Publica a payload
   delay(3000);
-  Serial.println(payload);
   Serial.println(aux2);
+  Serial.println(payload);
 }
 
 void mqtt_SIM7600::encerraMQTT()

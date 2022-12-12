@@ -18,8 +18,8 @@ void loop() {
   delay(3000);
 //  teste.retornoAT();
   
-  teste.inscreve(topico);
-  delay(3000);
+  //teste.inscreve(topico);
+  //delay(3000);
 //  teste.retornoAT();
   
   teste.publica(topico, msg);
