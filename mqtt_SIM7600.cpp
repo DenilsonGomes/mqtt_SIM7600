@@ -43,7 +43,7 @@ void mqtt_SIM7600::retornoAT(){
       int new4 = new3.indexOf('\n');
       String new5 = new3.substring(0,new4);
        
-      Serial.println("Topic: led/subscribe");
+      //Serial.println("Topic: led/subscribe");
       Serial.print("Message is: ");
       Serial.println(new5);
       new5.remove(new5.length()-1);
