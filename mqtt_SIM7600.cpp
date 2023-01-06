@@ -2,12 +2,9 @@
 #include "mqtt_SIM7600.h"
 
 // Variáveis
-int tensaoA; // Variavel para leitura analógica
-String aux1; // String auxiliar1
 String aux2; // String auxiliar2
 String a;
-int flag = 1;
-int flag1 = 0;
+int MAXTRIES = 10;
 
 // Objeto 
 SoftwareSerial mySerial(3, 2); // Objeto mySerial nos pinos 2 e 3
@@ -18,7 +15,27 @@ mqtt_SIM7600::mqtt_SIM7600(int num)
   mySerial.begin(9600); // Inicia a mySerial
 }
 
-void mqtt_SIM7600::retornoAT(){
+void mqtt_SIM7600::rssi()
+{
+  mySerial.println("AT+CSQ"); //AT Command for Setting up the Subscribe Topic Name 
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    Serial.println("Entrou no while(mySerial.available)");
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+}
+ 
+int mqtt_SIM7600::publica(String host, String token, String topico, String payload)
+{
+  int tries=0;
+  mySerial.println("AT+CRESET"); // Inicia o modem
+  delay(20000);
   Serial.println("Lendo retorno do comando.");
   //Receiving MODEM Response
   while(mySerial.available()>0)
@@ -26,88 +43,428 @@ void mqtt_SIM7600::retornoAT(){
     delay(10);
     a = mySerial.readString();
     Serial.println(a);
-    if(flag==0)
-    {
-      //Serial.println(a);
-    flag = 1;
-    }
-    //Serial.println(b);
-    if(a.indexOf("PAYLOAD") != -1)
-    {
-      Serial.println(a);
-      flag = 0;
-      int new1 = a.indexOf("PAYLOAD");
-      String neww = a.substring(new1);
-      int new2 = neww.indexOf('\n');
-      String new3 = neww.substring(new2+1);
-      int new4 = new3.indexOf('\n');
-      String new5 = new3.substring(0,new4);
-       
-      //Serial.println("Topic: led/subscribe");
-      Serial.print("Message is: ");
-      Serial.println(new5);
-      new5.remove(new5.length()-1);
-      Serial.println(new5);
-    }     
+    Serial.println(a.length());
   }
-} 
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao iniciar modem!");
+    mySerial.println("AT+CRESET"); // Inicia o modem
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+      Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
 
-void mqtt_SIM7600::iniciaMQTT(String host, String token)
-{
-  mySerial.println("ATE0"); // Inicia o modem
-  delay(2000);
+  tries = 0;
+  mySerial.println("ATE1"); // Inicia o modem
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  Serial.println(a);
+  Serial.println(a.length());
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao iniciar modem!");
+    Serial.print("Tentativa"); Serial.println(tries);
+    mySerial.println("ATE1"); // Inicia o modem
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+      Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+  
+  tries=0;
   mySerial.println("AT+CMQTTSTART"); // Inicia conexão MQTT
-  delay(2000); 
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao iniciar MQTT!");
+    mySerial.println("AT+CMQTTSTART"); // Inicia o MQTT
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
   mySerial.println("AT+CMQTTACCQ=0,\"Client d\""); // Client ID
-  delay(2000);
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao iniciar cliente MQTT!");
+    mySerial.println("AT+CMQTTACCQ=0,\"Client d\""); // Client ID
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
   String msg;
   msg = "AT+CMQTTCONNECT=0,\"" + host + "\",90,1,\"" + token + "\"";
   Serial.println(msg);
+
+  tries=0;
   mySerial.println(msg); // Conecta ao Servidor MQTT
   //"AT+CMQTTCONNECT=0,\"tcp://demo.thingsboard.io:1883\",90,1,\"uz8xZMgFQkltIc7VpL4A\""
   delay(3000);
-}
- 
-void mqtt_SIM7600::inscreve(String topico)
-{
-  mySerial.println("AT+CMQTTSUBTOPIC=0,9,1"); //AT Command for Setting up the Subscribe Topic Name 
-  delay(2000);
-  mySerial.println(topico); //Topic Name
-  delay(2000);
-  mySerial.println("AT+CMQTTSUB=0,4,1,1"); //Length of message
-  delay(2000);
-  mySerial.println("HAII"); //message
-  delay(2000);
-}
- 
-void mqtt_SIM7600::publica(String topico, String payload)
-{
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao conectar com servidor MQTT");
+    mySerial.println(msg); // Conecta ao Servidor MQTT
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
   mySerial.println("AT+CMQTTTOPIC=0," + String(topico.length())); // Tamanho do nome do topico
   Serial.println("AT+CMQTTTOPIC=0," + String(topico.length()));
-  delay(2000);
-  
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao definir tamanho do topico!");
+    mySerial.println("AT+CMQTTTOPIC=0," + String(topico.length())); // Tamanho do nome do topico
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
   mySerial.println(topico); // Topico
   Serial.println(topico);
-  delay(2000);
-  
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao setar topico!");
+    mySerial.println(topico); // Topico
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
   aux2 = "AT+CMQTTPAYLOAD=0," + String(payload.length());
   mySerial.println(aux2); // Define tamanho da payload
-  delay(2000);
+  Serial.println(aux2);
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao setar tamanho da payload");
+    mySerial.println(aux2); // Define tamanho da payload
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
+
   mySerial.println(payload); // Payload
-  delay(2000);
+  Serial.println(payload);
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao setar payload");
+    mySerial.println(payload); // Payload
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
+
   mySerial.println("AT+CMQTTPUB=0,1,60"); // Publica a payload
   delay(3000);
-  Serial.println(aux2);
-  Serial.println(payload);
-}
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao publicar payload!");
+    mySerial.println("AT+CMQTTPUB=0,1,60"); // Publica a payload
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
 
-void mqtt_SIM7600::encerraMQTT()
-{
+  tries=0;
   mySerial.println("AT+CMQTTDISC=0,60"); // Disconecta o cliente
-  delay(2000);
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao disconectar cliente MQTT!");
+    mySerial.println("AT+CMQTTDISC=0,60"); // Disconecta o cliente
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
+
   mySerial.println("AT+CMQTTREL=0"); // Release o servidor
-  delay(2000);
+  delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao release!");
+    mySerial.println("AT+CMQTTREL=0"); // Release o servidor
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
+  tries=0;
   mySerial.println("AT+CMQTTSTOP"); // Encerra conexão MQTT
   delay(3000);
+  Serial.println("Lendo retorno do comando.");
+  //Receiving MODEM Response
+  while(mySerial.available()>0)
+  {
+    delay(10);
+    a = mySerial.readString();
+    Serial.println(a);
+    Serial.println(a.length());
+  }
+  while(a.indexOf("OK") == -1 && tries <= MAXTRIES){
+    tries++;
+    Serial.println("Erro ao encerrar MQTT!");
+    mySerial.println("AT+CMQTTSTOP"); // Encerra conexão MQTT
+    delay(3000);
+    Serial.println("Lendo retorno do comando.");
+    //Receiving MODEM Response
+    while(mySerial.available()>0)
+    {
+      delay(10);
+      a = mySerial.readString();
+      Serial.println(a);
+    Serial.println(a.length());
+    }
+  }
+  if(tries == MAXTRIES){
+    Serial.println("Erro fatal. Resetar modem");
+    return 1;
+  }
+
   Serial.println("Encerrou MQTT");
+  return 0;
 }

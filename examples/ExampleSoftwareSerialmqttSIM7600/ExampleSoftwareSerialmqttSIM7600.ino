@@ -6,29 +6,30 @@ String host = "tcp://demo.thingsboard.io:1883";
 String token = "EKx0Da1Zjiue6N9XkVLf";
 String topico = "v1/devices/me/telemetry";
 String msg = "{\"A\":90}";
+#define MAXTRIES 10
+int tries;
+int ret;
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
+  delay(30000);
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  teste.iniciaMQTT(host, token);
-  delay(3000);
-//  teste.retornoAT();
-  
-  //teste.inscreve(topico);
+  teste.rssi();
   //delay(3000);
-//  teste.retornoAT();
+
+//  tries=0;
+//  ret = teste.publica(host, token, topico, msg);
+//  while(ret && tries <= MAXTRIES){
+//    Serial.println(ret);
+//    tries++;
+//  }
+//  if(tries >= MAXTRIES){
+//    Serial.println("Não conseguiu publicar.");
+//  }else{
+//    Serial.println("Publicado com sucesso!");
+//  }
   
-  teste.publica(topico, msg);
-  delay(3000);
-//  teste.retornoAT();
-  
-  teste.encerraMQTT();
-  delay(3000);
-//  teste.retornoAT();
-  
-  delay(60000);
+  delay(300000);
 }
